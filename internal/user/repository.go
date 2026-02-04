@@ -1,1 +1,64 @@
 package user
+
+import (
+	"database/sql"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+type UserRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(givenDb *sql.DB) *UserRepository {
+	return &UserRepository{
+		db: givenDb,
+	}
+}
+
+func (r *UserRepository) CreateAccount(user User) (*int, error) {
+	var user_id int
+	hashedPassword, hashErr := HashPassword(*user.PasswordHash)
+	if hashErr != nil {
+		return nil, hashErr
+	}
+
+	err := r.db.QueryRow("INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id", user.Username, hashedPassword).Scan(&user_id)
+	if err != nil {
+		return nil, err
+	}
+	return &user_id, nil
+}
+
+func (r *UserRepository) Login(user User) (*int, error) {
+	var storedHash string
+	var userId int
+	err := r.db.QueryRow("SELECT id, password FROM users WHERE username=$1 LIMIT 1", user.Username).Scan(&userId, &storedHash)
+	if err != nil {
+		return nil, err
+	}
+
+	isMatching := CheckPasswordHash(*user.PasswordHash, storedHash)
+
+	if !isMatching {
+		return nil, bcrypt.ErrMismatchedHashAndPassword
+	}
+	return &userId, nil
+}
+
+// Code from [https://gowebexamples.com/password-hashing/]
+
+// used to hash a unhashed password using bcrypt
+func HashPassword(password string) (string, error) {
+	// []byte(password) converts password string to a slice of bytes as strings are immutable
+	// 14 represents the number of hashing iterations which makes brute force harder/longer
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
+// used to compare a given password to a hashed password
+// and return if that passwords are the same
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil // err is false if bcrypt returns ErrMissmatchedHashAndPassword
+}
