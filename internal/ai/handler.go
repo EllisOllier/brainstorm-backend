@@ -3,6 +3,7 @@ package ai
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,8 +27,8 @@ type Project struct {
 }
 
 type Page struct {
-	PageName string `json:"page_name"`
-	Content  string `json:"content"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 type ProjectWrapper struct {
@@ -68,7 +69,7 @@ Return ONLY a JSON object following this exact structure:
     "description": "string",
     "pages": [
       {
-        "page_name": "string",
+        "title": "string",
         "content": "string"
       }
     ]
@@ -87,6 +88,8 @@ Return ONLY a JSON object following this exact structure:
 	cleanedJson = strings.ReplaceAll(cleanedJson, "```", "")
 	cleanedJson = strings.TrimSpace(cleanedJson)
 
+	fmt.Printf("DEBUG AI OUTPUT: |%s|\n", cleanedJson)
+
 	var projectResponse ProjectWrapper
 	err = json.Unmarshal([]byte(cleanedJson), &projectResponse)
 	if err != nil {
@@ -94,11 +97,18 @@ Return ONLY a JSON object following this exact structure:
 		return
 	}
 
-	// Change _ to projectId when returning to user after implementation is complete
-	_, err = s.aiRepository.AddProject(projectResponse.Project, userId)
+	projectId, err := s.aiRepository.AddProject(projectResponse.Project, userId)
 	if err != nil {
-		http.Error(w, "Server Error: 500", http.StatusInternalServerError)
+		http.Error(w, "Error storing project in database", http.StatusInternalServerError)
 		return
+	}
+
+	for _, p := range projectResponse.Project.Pages {
+		_, err = s.aiRepository.AddPage(p, projectId, userId) // maybe set _ to pageId when doing front end implementation
+		if err != nil {
+			http.Error(w, "Error storing pages in database", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	json.NewEncoder(w).Encode(projectResponse)
