@@ -89,3 +89,17 @@ Return ONLY a JSON object following this exact structure:
 
 	json.NewEncoder(w).Encode(projectResponse)
 }
+
+// Needs reworking to respond with json
+// func (s *AiService) HandleChat(w http.ResponseWriter, r *http.Request) {
+// 	chat, err := s.Client.Chats.Create(ctx, "gemini-2.0-flash", nil, history)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to create chat session: %w", err)
+// 	}
+
+// 	res, err := chat.SendMessage(ctx, genai.Part{Text: message})
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return res.Text(), nil
+// }
