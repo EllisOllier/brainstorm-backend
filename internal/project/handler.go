@@ -27,7 +27,7 @@ func (s *ProjectService) GetProjectById(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	row, err := s.projectRepository.GetTodoById(id, userId)
+	row, err := s.projectRepository.GetProjectById(id, userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Not Found: 404", http.StatusNotFound)
