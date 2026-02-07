@@ -54,6 +54,7 @@ func main() {
 
 	// project related routes
 	mux.Handle("GET /project/{id}", middleware.Authenticate(http.HandlerFunc(projectService.GetProjectById)))
+	mux.Handle("GET /project", middleware.Authenticate(http.HandlerFunc(projectService.GetProjects)))
 	// API Routes above
 	loggingMux := middleware.LoggingMiddleware(mux)
 	http.ListenAndServe(port, loggingMux)
