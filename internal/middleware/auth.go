@@ -27,7 +27,7 @@ func Authenticate(next http.Handler) http.Handler {
 		})
 
 		if err != nil || !token.Valid {
-			http.Error(w, "Server Error: 500", http.StatusUnauthorized)
+			http.Error(w, "Unauthorized: 401", http.StatusUnauthorized)
 			return
 		}
 
