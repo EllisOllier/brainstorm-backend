@@ -33,7 +33,7 @@ type ProjectWrapper struct {
 	Project Project `json:"project"`
 }
 
-func (s *GeminiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
+func (s *AiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var req AiRequest
