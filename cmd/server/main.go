@@ -29,11 +29,12 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	// initialise repostiory and services
-	aiService, err := ai.NewGeminiService(context.Background(), os.Getenv("GEMINI_API_KEY"))
+	aiRepository := ai.NewAiRepository(db)
+	aiService, err := ai.NewAiService(aiRepository, context.Background(), os.Getenv("GEMINI_API_KEY"))
 	if err != nil {
 		log.Fatal("Error starting AI client!", err)
 	}
-	log.Println("Successfully initialised ai client")
+	log.Println("Successfully initialised AI client")
 
 	userRepository := user.NewUserRepository(db)
 	userService := user.NewUserService(userRepository)
