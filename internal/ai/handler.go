@@ -4,6 +4,7 @@ package ai
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"google.golang.org/genai"
 )
@@ -15,6 +16,21 @@ type Message struct {
 
 type AiRequest struct {
 	Messages []Message `json:"messages"`
+}
+
+type Project struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Pages       []Page `json:"pages"`
+}
+
+type Page struct {
+	PageName string `json:"page_name"`
+	Content  string `json:"content"`
+}
+
+type ProjectWrapper struct {
+	Project Project `json:"project"`
 }
 
 func (s *GeminiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +53,20 @@ func (s *GeminiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
 		history = append(history, genai.NewContentFromText(m.Content, genai.Role(role)))
 	}
 
-	history = append(history, genai.NewContentFromText("Based on the conversation above, generate a project summary including a name, title, and structured pages.", genai.RoleUser))
+	history = append(history, genai.NewContentFromText(`Based on the conversation above, generate a project summary. 
+Return ONLY a JSON object following this exact structure:
+{
+  "project": {
+    "title": "string",
+    "description": "string",
+    "pages": [
+      {
+        "page_name": "string",
+        "content": "string"
+      }
+    ]
+  }
+}`, genai.RoleUser))
 
 	res, err := s.Client.Models.GenerateContent(r.Context(), "gemini-2.0-flash", history, nil)
 	if err != nil {
@@ -45,8 +74,18 @@ func (s *GeminiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reply := res.Text()
-	json.NewEncoder(w).Encode(map[string]string{
-		"reply": reply,
-	})
+	rawReply := res.Text()
+
+	cleanedJson := strings.ReplaceAll(rawReply, "```json", "")
+	cleanedJson = strings.ReplaceAll(cleanedJson, "```", "")
+	cleanedJson = strings.TrimSpace(cleanedJson)
+
+	var projectResponse ProjectWrapper
+	err = json.Unmarshal([]byte(cleanedJson), &projectResponse)
+	if err != nil {
+		http.Error(w, "Failed to parse AI JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(projectResponse)
 }
