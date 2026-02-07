@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/EllisOllier/brainstorm-backend/internal/middleware"
 	"google.golang.org/genai"
 )
 
@@ -35,6 +36,12 @@ type ProjectWrapper struct {
 
 func (s *AiService) ChatToProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	rawId := r.Context().Value(middleware.UserIdKey)
+	userId, ok := rawId.(int)
+	if !ok {
+		http.Error(w, "Could not find user ID", http.StatusUnauthorized)
+		return
+	}
 
 	var req AiRequest
 	dec := json.NewDecoder(r.Body)
@@ -84,6 +91,13 @@ Return ONLY a JSON object following this exact structure:
 	err = json.Unmarshal([]byte(cleanedJson), &projectResponse)
 	if err != nil {
 		http.Error(w, "Failed to parse AI JSON: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Change _ to projectId when returning to user after implementation is complete
+	_, err = s.aiRepository.AddProject(projectResponse.Project, userId)
+	if err != nil {
+		http.Error(w, "Server Error: 500", http.StatusInternalServerError)
 		return
 	}
 
