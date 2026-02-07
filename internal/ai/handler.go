@@ -3,7 +3,6 @@ package ai
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -87,8 +86,6 @@ Return ONLY a JSON object following this exact structure:
 	cleanedJson := strings.ReplaceAll(rawReply, "```json", "")
 	cleanedJson = strings.ReplaceAll(cleanedJson, "```", "")
 	cleanedJson = strings.TrimSpace(cleanedJson)
-
-	fmt.Printf("DEBUG AI OUTPUT: |%s|\n", cleanedJson)
 
 	var projectResponse ProjectWrapper
 	err = json.Unmarshal([]byte(cleanedJson), &projectResponse)
