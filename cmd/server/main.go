@@ -9,6 +9,7 @@ import (
 	"github.com/EllisOllier/brainstorm-backend/internal/ai"
 	"github.com/EllisOllier/brainstorm-backend/internal/database"
 	"github.com/EllisOllier/brainstorm-backend/internal/middleware"
+	"github.com/EllisOllier/brainstorm-backend/internal/project"
 	"github.com/EllisOllier/brainstorm-backend/internal/user"
 	"github.com/joho/godotenv"
 )
@@ -39,6 +40,9 @@ func main() {
 	userRepository := user.NewUserRepository(db)
 	userService := user.NewUserService(userRepository)
 
+	projectRepository := project.NewProjectRepository(db)
+	projectService := project.NewProjectService(projectRepository)
+
 	mux := http.NewServeMux()
 	// API Routes below
 	// ai retlated routes
@@ -47,6 +51,9 @@ func main() {
 	// user related routes
 	mux.HandleFunc("POST /user", userService.CreateAccount)
 	mux.HandleFunc("POST /user/login", userService.Login)
+
+	// project related routes
+	mux.Handle("GET /project/{id}", middleware.Authenticate(http.HandlerFunc(projectService.GetProjectById)))
 	// API Routes above
 	loggingMux := middleware.LoggingMiddleware(mux)
 	http.ListenAndServe(port, loggingMux)
